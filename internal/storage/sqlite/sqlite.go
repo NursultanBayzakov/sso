@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	_ "github.com/lib/pq"
 	"grpc-service-ref/internal/domain/models"
 	"grpc-service-ref/internal/storage"
 
@@ -19,7 +20,7 @@ type Storage struct {
 func New(storagePath string) (*Storage, error) {
 	const op = "storage.sqlite.New"
 
-	db, err := sql.Open("sqlite3", storagePath)
+	db, err := sql.Open("postgres", storagePath)
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", op, err)
 	}

@@ -1,0 +1,17 @@
+  version: '3.9'
+
+  services:
+    db:
+      container_name: catalogue-db-grocery
+      image: postgres
+      restart: always
+      ports:
+        - "5434:5432"
+      environment:
+        POSTGRES_USER: auth
+        POSTGRES_PASSWORD: auth
+      volumes:
+        - pgdata:/var/lib/postgresql/data
+
+  volumes:
+    pgdata:

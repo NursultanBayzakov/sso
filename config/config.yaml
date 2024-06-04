@@ -1,5 +1,5 @@
 env: "local"
-storage_path: "./storage/sso.db"
+storage_path: "postgres://auth:auth@localhost:5433/postgres?sslmode=disable"
 grpc:
   port: 44044
   timeout: 5s

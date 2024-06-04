@@ -1,14 +1,13 @@
 package main
 
 import (
+	"database/sql"
+	"fmt"
+	_ "github.com/lib/pq"
+	"grpc-service-ref/internal/lib/logger/handlers/slogpretty"
+	"log"
 	"log/slog"
 	"os"
-	"os/signal"
-	"syscall"
-
-	"grpc-service-ref/internal/app"
-	"grpc-service-ref/internal/config"
-	"grpc-service-ref/internal/lib/logger/handlers/slogpretty"
 )
 
 const (
@@ -18,25 +17,45 @@ const (
 )
 
 func main() {
-	cfg := config.MustLoad()
+	connStr := os.Getenv("DATABASE_URL")
+	if connStr == "" {
+		connStr = "postgres://auth:auth@localhost:5433/postgres?sslmode=disable"
+		log.Println("DATABASE_URL not set, using default connection string")
+	}
 
-	log := setupLogger(cfg.Env)
+	db, err := sql.Open("postgres", connStr)
+	if err != nil {
+		log.Fatalf("Failed to open database: %v", err)
+	}
+	defer db.Close()
 
-	application := app.New(log, cfg.GRPC.Port, cfg.StoragePath, cfg.TokenTTL)
+	err = db.Ping()
+	if err != nil {
+		log.Fatalf("Failed to ping database: %v", err)
+	}
 
-	go func() {
-		application.GRPCServer.MustRun()
-	}()
+	fmt.Println("Successfully connected to the database")
 
-	// Graceful shutdown
+	// Uncomment and configure the following when ready to use the full application
+	/*
+	   cfg := config.MustLoad()
+	   log := setupLogger(cfg.Env)
 
-	stop := make(chan os.Signal, 1)
-	signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
+	   application := app.New(log, cfg.GRPC.Port, cfg.StoragePath, cfg.TokenTTL)
 
-	<-stop
+	   go func() {
+	       application.GRPCServer.MustRun()
+	   }()
 
-	application.GRPCServer.Stop()
-	log.Info("Gracefully stopped")
+	   // Graceful shutdown
+	   stop := make(chan os.Signal, 1)
+	   signal.Notify(stop, syscall.SIGTERM, syscall.SIGINT)
+
+	   <-stop
+
+	   application.GRPCServer.Stop()
+	   log.Info("Gracefully stopped")
+	*/
 }
 
 func setupLogger(env string) *slog.Logger {
@@ -66,6 +85,5 @@ func setupPrettySlog() *slog.Logger {
 	}
 
 	handler := opts.NewPrettyHandler(os.Stdout)
-
 	return slog.New(handler)
 }
